@@ -5,7 +5,30 @@ import re
 from exceptions import KeywordError, LexicalError, ParseError, SyntaxAnalyzeError
 
 
-class LexicalAnalyzer:
+class Token:
+    TYPE_CONST = 1
+    TYPE_KEYWORD = 2
+    TYPE_IDENTIFIER = 3
+    TYPE_DELIMITER = 4
+
+    def __init__(self, table, index, pos, value):
+        self.table = table
+        self.index = index
+        self.pos = pos
+        self.value = value
+
+    def __str__(self):
+        return "({}, {})".format(self.table, self.index)
+
+    def __repr__(self):
+        return "<Token {}>".format(str(self))
+
+    @staticmethod
+    def token_list_to_str(token_list):
+        return " ".join(map(lambda token: token.value, token_list))
+
+
+class LexicalParser:
     def __init__(self, keywords, identifier_regex=r'[A-Za-z_][A-Za-z0-9_]*'):
         self.constants = []
         self.identifiers = []
@@ -21,55 +44,91 @@ class LexicalAnalyzer:
         self.line = 1
 
         self.source_string = ""
+        self.token_list = []
 
-    def analyze(self, source_string):
+    def parse(self, source_string):
         self.source_string = source_string
         self.length = len(source_string)
 
         while self.pos < self.length:
-            try:
-                program = self._parse_keyword()
+            self._parse_whitespaces()
 
-                if not program in self.keywords:
-                    raise KeywordError(self.line, self.line_pos, "program", program)
+            token_word = self._parse_token_word()
+            token_type = self._get_type(token_word)
 
-            except KeywordError as e:
-                raise SyntaxAnalyzeError(*e.get_line_pos(), "keyword", e.get_actual())
-            except ParseError as e:
-                raise SyntaxAnalyzeError(*e.get_line_pos(), "keyword", self._current_char())
+            if token_type == Token.TYPE_CONST:
+                self.token_list.append(self._get_const_token(token_word))
+
+            elif token_type == Token.TYPE_KEYWORD:
+                self.token_list.append(self._get_keyword_token(token_word))
+
+            elif token_type == Token.TYPE_IDENTIFIER:
+                self.token_list.append(self._get_identifier_token(token_word))
+
+            elif token_type == Token.TYPE_DELIMITER:
+                self.token_list.append(self._get_delimiter_token(token_word))
+
+            else:
+                raise ParseError(self.line, self.line_pos, "not a valid token") # 'a123a,'
+
+        return self.token_list
+
+    def _get_type(self, token_word):
+        if token_word in self.keywords:
+            return Token.TYPE_KEYWORD
+        elif token_word in self.delimiters:
+            return Token.TYPE_DELIMITER
+        elif self.identifierRegex.fullmatch(token_word):
+            return Token.TYPE_IDENTIFIER
+        else:
+            if token_word in ('true', 'false'):
+                return Token.TYPE_CONST
+            else:
+                try:
+                    value = float(token_word)
+                    return Token.TYPE_CONST
+                except ValueError:
+                    return None
+
+    def _parse_token_word(self):
+        word = self._parse_while(lambda x: not x.isspace())
+        return word
 
     def _parse_whitespaces(self):
-        word = self._parse_while(lambda x : x.isspace())
+        word = self._parse_while(lambda x: x.isspace())
         return word
 
-    def _parse_keyword(self):
-        word = self._parse_while(lambda x : x.isalpha())
-        return word
+    def _get_keyword_token(self, word):
+        table = Token.TYPE_KEYWORD
+        index = self.keywords.index(word)
+        return Token(table, index, self._current_pos(), word)
 
-    def _parse_identifier(self):
-        c = self._current_char()
-        word = ""
+    def _get_identifier_token(self, word):
+        table = Token.TYPE_IDENTIFIER
 
-        if c.isalpha():
-            word += c
+        if word not in self.identifiers:
+            self.identifiers.append(word)
 
-            c = self._next()
-            while c.isdigit():
-                word += c
-                c = self._next()
+        index = self.identifiers.index(word)
+        return Token(table, index, self._current_pos(), word)
 
-            if c.isalpha():
-                word += c
-                c = self._next()
+    def _get_const_token(self, word):
+        table = Token.TYPE_CONST
 
-                if c.isspace():
-                    return word
-                else:
-                    raise ParseError(self.line, self.line_pos, "not ended with 1 letter: '{}' found".format(c))
-            else:
-                raise ParseError(self.line, self.line_pos, "not ended with 1 letter: '{}' found".format(c))
-        else:
-            raise ParseError(self.line, self.line_pos, "not started with letter: '{}' found".format(c))
+        if word not in self.constants:
+            self.constants.append(word)
+
+        index = self.constants.index(word)
+        return Token(table, index, self._current_pos(), word)
+
+    def _get_delimiter_token(self, word):
+        table = Token.TYPE_DELIMITER
+
+        if word not in self.delimiters:
+            self.delimiters.append(word)
+
+        index = self.delimiters.index(word)
+        return Token(table, index, self._current_pos(), word)
 
     def _parse_while(self, predicate):
         c = self._current_char()
@@ -86,6 +145,9 @@ class LexicalAnalyzer:
 
     def _current_char(self):
         return self.source_string[self.pos]
+
+    def _current_pos(self):
+        return self.line, self.line_pos
 
     def _peek_next(self):
         if self.pos + 1 < self.length:
@@ -114,5 +176,47 @@ class Compiler:
 
 if __name__ == '__main__':
     pass
-    # lexicalAnalyzer = LexicalAnalyzer()
-    # program = input()
+    lexicalAnalyzer = LexicalParser([
+        "program",
+        "var",
+        "begin",
+        "end",
+        "integer",
+        "real",
+        "boolean",
+        "let",
+        "switch",
+        "case",
+        "for",
+        "to",
+        "do",
+        "while",
+        "loop",
+        "readln",
+        "writeln"
+    ])
+    program = """
+        program
+        var
+            a123a, b123b : integer;
+            c123c, d123d : real;
+            e123e, f123f : boolean;
+        begin
+            let a123a = 123;
+            c123c = 12.3;
+            f123f = false;
+            switch 12 + 3: {
+                case 1:
+                    d123d = 5.0
+                case 15:
+                    e123e = true
+            }
+            for b123b = 1 to 30 do
+                writeln 1 + 2
+            do while a123a == 123
+                a123a = 1234
+            loop
+        end.
+    """
+    token_list = lexicalAnalyzer.parse(program)
+    print(Token.token_list_to_str(token_list))
