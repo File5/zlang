@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
-from exceptions import LexicalError, ParseError
+from exceptions import KeywordError, LexicalError, ParseError, SyntaxAnalyzeError
 
 
 class LexicalAnalyzer:
@@ -27,7 +27,16 @@ class LexicalAnalyzer:
         self.length = len(source_string)
 
         while self.pos < self.length:
-            pass
+            try:
+                program = self._parse_keyword()
+
+                if not program in self.keywords:
+                    raise KeywordError(self.line, self.line_pos, "program", program)
+
+            except KeywordError as e:
+                raise SyntaxAnalyzeError(*e.get_line_pos(), "keyword", e.get_actual())
+            except ParseError as e:
+                raise SyntaxAnalyzeError(*e.get_line_pos(), "keyword", self._current_char())
 
     def _parse_whitespaces(self):
         word = self._parse_while(lambda x : x.isspace())
@@ -61,7 +70,6 @@ class LexicalAnalyzer:
                 raise ParseError(self.line, self.line_pos, "not ended with 1 letter: '{}' found".format(c))
         else:
             raise ParseError(self.line, self.line_pos, "not started with letter: '{}' found".format(c))
-
 
     def _parse_while(self, predicate):
         c = self._current_char()

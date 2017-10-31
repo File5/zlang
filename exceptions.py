@@ -21,3 +21,19 @@ class LexicalError(ParseError):
             pos,
             "{} expected, but was '{}'".format(expected, actual)
         )
+
+
+class KeywordError(LexicalError):
+
+    def __init__(self, line, pos, keyword_expected, actual):
+        super(KeywordError, self).__init__(line, pos, "keyword '{}'".format(keyword_expected), actual)
+        self.actual = actual
+
+    def get_actual(self):
+        return self.actual
+
+
+class SyntaxAnalyzeError(LexicalError):
+
+    def __init__(self, line, pos, expected, actual):
+        super(SyntaxAnalyzeError, self).__init__(line, pos, expected, actual)
