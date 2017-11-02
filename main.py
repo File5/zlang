@@ -50,7 +50,7 @@ class LexicalParser:
         self.source_string = source_string
         self.length = len(source_string)
 
-        while self.pos < self.length:
+        while True:
             self._parse_whitespaces()
 
             token_word = self._parse_token_word()
@@ -69,20 +69,23 @@ class LexicalParser:
                 self.token_list.append(self._get_delimiter_token(token_word))
 
             else:
-                raise ParseError(self.line, self.line_pos, "not a valid token") # 'a123a,'
+                raise ParseError(self.line, self.line_pos, "not a valid token")
+
+            if not self._has_next():
+                break
 
         return self.token_list
 
     def _get_type(self, token_word):
         if token_word in self.keywords:
             return Token.TYPE_KEYWORD
-        elif token_word in self.delimiters:
-            return Token.TYPE_DELIMITER
+        if token_word in ('true', 'false'):
+            return Token.TYPE_CONST
         elif self.identifierRegex.fullmatch(token_word):
             return Token.TYPE_IDENTIFIER
         else:
-            if token_word in ('true', 'false'):
-                return Token.TYPE_CONST
+            if len(token_word) == 1 and not token_word.isdigit():
+                return Token.TYPE_DELIMITER
             else:
                 try:
                     value = float(token_word)
@@ -91,12 +94,26 @@ class LexicalParser:
                     return None
 
     def _parse_token_word(self):
-        word = self._parse_while(lambda x: not x.isspace())
-        return word
+        predicate = lambda x: x.isalnum() or x in ('_', )
+        c = self._current_char()
+        if not predicate(c):
+
+            if self._has_next():
+                self._next()
+
+            return c
+        else:
+            word = self._parse_while(predicate)
+            return word
 
     def _parse_whitespaces(self):
-        word = self._parse_while(lambda x: x.isspace())
-        return word
+        predicate = lambda x: x.isspace()
+        c = self._current_char()
+        if not predicate(c):
+            return ""
+        else:
+            word = self._parse_while(predicate)
+            return word
 
     def _get_keyword_token(self, word):
         table = Token.TYPE_KEYWORD
@@ -137,6 +154,10 @@ class LexicalParser:
         if predicate(c):
             while predicate(c):
                 word += c
+
+                if not self._has_next():
+                    break
+
                 c = self._next()
 
             return word
@@ -154,6 +175,9 @@ class LexicalParser:
             return self.source_string[self.pos + 1]
         else:
             return None
+
+    def _has_next(self):
+        return self.pos + 1 < self.length
 
     def _next(self):
         if self._current_char() == '\n':
@@ -219,4 +243,9 @@ if __name__ == '__main__':
         end.
     """
     token_list = lexicalAnalyzer.parse(program)
+    print("1. Constants:", lexicalAnalyzer.constants)
+    print("2. Keywords:", lexicalAnalyzer.keywords)
+    print("3. Identifiers:", lexicalAnalyzer.identifiers)
+    print("4. Delimiters:", lexicalAnalyzer.delimiters)
     print(Token.token_list_to_str(token_list))
+    print(", ".join(map(str, token_list)))
