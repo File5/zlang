@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+from sys import stderr
 from exceptions import KeywordError, LexicalError, ParseError, SyntaxAnalyzeError
 
 
@@ -40,7 +41,7 @@ class LexicalParser:
         self.pos = 0
         self.length = 0
 
-        self.line_pos = 0
+        self.line_pos = 1
         self.line = 1
 
         self.source_string = ""
@@ -81,8 +82,11 @@ class LexicalParser:
             return Token.TYPE_KEYWORD
         if token_word in ('true', 'false'):
             return Token.TYPE_CONST
-        elif self.identifierRegex.fullmatch(token_word):
-            return Token.TYPE_IDENTIFIER
+        elif token_word.isidentifier():
+            if self.identifierRegex.fullmatch(token_word):
+                return Token.TYPE_IDENTIFIER
+            else:
+                raise LexicalError(self.line, self.line_pos - len(token_word), 'identifier', token_word)
         else:
             if len(token_word) == 1 and not token_word.isdigit():
                 return Token.TYPE_DELIMITER
@@ -182,7 +186,7 @@ class LexicalParser:
     def _next(self):
         if self._current_char() == '\n':
             self.line += 1
-            self.line_pos = -1
+            self.line_pos = 0
 
         self.pos += 1
         self.line_pos += 1
@@ -199,7 +203,6 @@ class Compiler:
 
 
 if __name__ == '__main__':
-    pass
     lexicalAnalyzer = LexicalParser([
         "program",
         "var",
@@ -218,7 +221,7 @@ if __name__ == '__main__':
         "loop",
         "readln",
         "writeln"
-    ])
+    ], r'[A-Za-z][0-9]*[A-Za-z]')
     program = """
         program
         var
@@ -242,10 +245,17 @@ if __name__ == '__main__':
             loop
         end.
     """
-    token_list = lexicalAnalyzer.parse(program)
-    print("1. Constants:", lexicalAnalyzer.constants)
-    print("2. Keywords:", lexicalAnalyzer.keywords)
-    print("3. Identifiers:", lexicalAnalyzer.identifiers)
-    print("4. Delimiters:", lexicalAnalyzer.delimiters)
-    print(Token.token_list_to_str(token_list))
-    print(", ".join(map(str, token_list)))
+    try:
+        token_list = lexicalAnalyzer.parse(program)
+
+        print("1. Constants:", lexicalAnalyzer.constants)
+        print("2. Keywords:", lexicalAnalyzer.keywords)
+        print("3. Identifiers:", lexicalAnalyzer.identifiers)
+        print("4. Delimiters:", lexicalAnalyzer.delimiters)
+
+        print(Token.token_list_to_str(token_list))
+
+        print(", ".join(map(str, token_list)))
+
+    except LexicalError as e:
+        print("Lexical error at {}:{} : ".format(*e.get_line_pos()) + e.get_info(), file=stderr)

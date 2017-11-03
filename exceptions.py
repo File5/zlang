@@ -8,9 +8,13 @@ class ParseError(Exception):
         super(ParseError, self).__init__(info)
         self.pos = pos
         self.line = line
+        self.info = info
 
     def get_line_pos(self):
         return self.line, self.pos
+
+    def get_info(self):
+        return self.info
 
 
 class LexicalError(ParseError):
