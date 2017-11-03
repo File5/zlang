@@ -3,7 +3,7 @@
 
 import re
 from sys import stderr
-from exceptions import KeywordError, LexicalError, ParseError, SyntaxAnalyzeError
+from exceptions import InvalidIdentifierError, KeywordError, LexicalError, ParseError, SyntaxAnalyzeError
 
 
 class Token:
@@ -70,7 +70,7 @@ class LexicalParser:
                 self.token_list.append(self._get_delimiter_token(token_word))
 
             else:
-                raise ParseError(self.line, self.line_pos, "not a valid token")
+                raise ParseError(self.line, self.line_pos, "not a valid token for token word '{}'".format(token_word))
 
             if not self._has_next():
                 break
@@ -80,14 +80,14 @@ class LexicalParser:
     def _get_type(self, token_word):
         if token_word in self.keywords:
             return Token.TYPE_KEYWORD
-        if token_word in ('true', 'false'):
-            return Token.TYPE_CONST
         elif token_word.isidentifier():
             if self.identifierRegex.fullmatch(token_word):
                 return Token.TYPE_IDENTIFIER
             else:
-                raise LexicalError(self.line, self.line_pos - len(token_word), 'identifier', token_word)
+                raise InvalidIdentifierError(self.line, self.line_pos - len(token_word), token_word)
         else:
+            if token_word == '==':
+                return Token.TYPE_DELIMITER
             if len(token_word) == 1 and not token_word.isdigit():
                 return Token.TYPE_DELIMITER
             else:
@@ -100,6 +100,11 @@ class LexicalParser:
     def _parse_token_word(self):
         predicate = lambda x: x.isalnum() or x in ('_', )
         c = self._current_char()
+        if c == '=' and self._peek_next() == '=':
+            self._next() # parse first '='
+            self._next() # parse second '='
+            return '=='
+
         if not predicate(c):
 
             if self._has_next():
@@ -108,7 +113,12 @@ class LexicalParser:
             return c
         else:
             word = self._parse_while(predicate)
-            return word
+            if word.isnumeric() and self._current_char() == '.' and self._peek_next().isdigit():
+                self._next() # parse '.'
+                second_word = self._parse_while(predicate)
+                return word + '.' + second_word
+            else:
+                return word
 
     def _parse_whitespaces(self):
         predicate = lambda x: x.isspace()
@@ -220,7 +230,9 @@ if __name__ == '__main__':
         "while",
         "loop",
         "readln",
-        "writeln"
+        "writeln",
+        "true",
+        "false"
     ], r'[A-Za-z][0-9]*[A-Za-z]')
     program = """
         program
@@ -228,11 +240,12 @@ if __name__ == '__main__':
             a123a, b123b : integer;
             c123c, d123d : real;
             e123e, f123f : boolean;
+            wrongIdentifier : integer;
         begin
             let a123a = 123;
             c123c = 12.3;
             f123f = false;
-            switch 12 + 3: {
+            switch 12 + 3 {
                 case 1:
                     d123d = 5.0
                 case 15:
@@ -257,5 +270,5 @@ if __name__ == '__main__':
 
         print(", ".join(map(str, token_list)))
 
-    except LexicalError as e:
-        print("Lexical error at {}:{} : ".format(*e.get_line_pos()) + e.get_info(), file=stderr)
+    except InvalidIdentifierError as e:
+        print("Invalid identifier error at {}:{} : ".format(*e.get_line_pos()) + e.get_info(), file=stderr)

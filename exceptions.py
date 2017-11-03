@@ -27,6 +27,21 @@ class LexicalError(ParseError):
         )
 
 
+class InvalidIdentifierError(LexicalError):
+
+    def __init__(self, line, pos, wrong_identifier):
+        super(InvalidIdentifierError, self).__init__(
+            line,
+            pos,
+            'identifier',
+            wrong_identifier
+        )
+        self.wrong_identifier = wrong_identifier
+
+    def get_wrong_identifier(self):
+        return self.wrong_identifier
+
+
 class KeywordError(LexicalError):
 
     def __init__(self, line, pos, keyword_expected, actual):
