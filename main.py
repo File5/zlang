@@ -54,6 +54,9 @@ class LexicalParser:
         while True:
             self._parse_whitespaces()
 
+            if self.pos == self.length:
+                break
+
             token_word = self._parse_token_word()
             token_type = self._get_type(token_word)
 
@@ -170,6 +173,7 @@ class LexicalParser:
                 word += c
 
                 if not self._has_next():
+                    self.pos = self.length
                     break
 
                 c = self._next()
@@ -240,7 +244,6 @@ if __name__ == '__main__':
             a123a, b123b : integer;
             c123c, d123d : real;
             e123e, f123f : boolean;
-            wrongIdentifier : integer;
         begin
             let a123a = 123;
             c123c = 12.3;
