@@ -17,9 +17,10 @@ OUTPUT_OPERATOR ::= writeln EXPRESSION_N
 EXPRESSION_N ::= EXPRESSION | EXPRESSION , EXPRESSION_N
 
 ! EXPRESSION ::= E
-E ::= E + T | E - T | T
+E ::= A < A | A <= A | A > A | A >= A | A == A | A != A | A
+A ::= A + T | A - T | T
 T ::= T * P | T / P | P
 P ::= ( E ) | ID | CONSTANT
 
 ! ID, CONSTANT
-program var begin end . : ; ID , integer real boolean { } = let switch case for to do while loop readln writeln + - * / ( ) CONSTANT
+program var begin end . : ; ID , integer real boolean { } = let switch case for to do while loop readln writeln + - * / ( ) CONSTANT < <= > >= == !=
