@@ -134,25 +134,29 @@ P ::= ( A ) | ID | CONSTANT"""
             rightmost.append(symbol)
 
     # дополнение вложенными нетерминалами
-    changed = True
-    while changed:
-        changed = False
+    def complete_table(leftmost_and_rightmost_nt, lr_key):
+        changed = True
+        while changed:
+            changed = False
 
-        for non_terminal in leftmost_and_rightmost_nt:
-            additional_symbols = []
+            for non_terminal in leftmost_and_rightmost_nt:
+                additional_symbols = []
 
-            left_symbols = leftmost_and_rightmost_nt[non_terminal]['l']
-            for symbol in left_symbols:
-                if symbol in NON_TERMINALS:
-                    potential_symbols = leftmost_and_rightmost_nt[symbol]['l']
+                left_symbols = leftmost_and_rightmost_nt[non_terminal][lr_key]
+                for symbol in left_symbols:
+                    if symbol in NON_TERMINALS:
+                        potential_symbols = leftmost_and_rightmost_nt[symbol][lr_key]
 
-                    for potential_symbol in potential_symbols:
-                        if potential_symbol not in left_symbols and potential_symbol not in additional_symbols:
-                            additional_symbols.append(potential_symbol)
+                        for potential_symbol in potential_symbols:
+                            if potential_symbol not in left_symbols and potential_symbol not in additional_symbols:
+                                additional_symbols.append(potential_symbol)
 
-            changed = changed or len(additional_symbols) > 0
-            leftmost_and_rightmost_nt[non_terminal]['l'] += additional_symbols
+                changed = changed or len(additional_symbols) > 0
+                leftmost_and_rightmost_nt[non_terminal][lr_key] += additional_symbols
+
+    for lr_key in ('l', 'r'):
+        complete_table(leftmost_and_rightmost_nt, lr_key)
 
     for u, row in leftmost_and_rightmost_nt.items():
-        print(u, row)
+        print(u, 'L ' + str(row['l']), 'R ' + str(row['r']), sep='\n', end='\n' + '*' * 80 + '\n')
     print('\n', end='')
