@@ -3,7 +3,16 @@
 
 TERMINALS = 'program var begin end . : ; ID , integer real boolean { } = let switch case for to do while loop readln writeln + - * / ( ) CONSTANT < <= > >= == !='.split(' ')
 
+START_NON_TERMINAL = 'PROGRAM'
+
+# Терминальные символы начала и конца цепочки. Не должны встречаться среди TERMINALS
+BEGIN_TERMINAL = 'BEGIN'
+END_TERMINAL = 'END'
+
 OUT_FILENAME = 'operator-precedence-table.csv'
+
+if BEGIN_TERMINAL in TERMINALS or END_TERMINAL in TERMINALS:
+    raise ValueError("BEGIN_TERMINAL and END_TERMINAL should NOT be in TERMINALS")
 
 class GrammarRule:
 
@@ -309,14 +318,36 @@ P ::= ( A ) | ID | CONSTANT"""
                 j = TERMINALS.index(symbol)
                 set_or_append_op_table(j, i, '>')
 
+    # строка для терминала начала цепочки
+    op_table.append([' '] * len(TERMINALS))
+
+    # столбец для терминала конца цепочки
+    for row in op_table:
+        row.append(' ')
+
+    i = len(TERMINALS)
+
+    symbols = leftmost_and_rightmost_t[START_NON_TERMINAL]['l']
+    for symbol in symbols:
+        j = TERMINALS.index(symbol)
+        set_or_append_op_table(i, j, '<')
+
+    symbols = leftmost_and_rightmost_t[START_NON_TERMINAL]['r']
+    for symbol in symbols:
+        j = TERMINALS.index(symbol)
+        set_or_append_op_table(j, i, '>')
+
     # print(str(op_table).replace('], ', '],\n '))
 
     str_op_table = op_table[:]
 
     for i, row in enumerate(str_op_table):
-        row.insert(0, TERMINALS[i])
+        if i < len(TERMINALS):
+            row.insert(0, TERMINALS[i])
+        else:
+            row.insert(0, BEGIN_TERMINAL)
 
-    str_op_table.insert(0, [' '] + TERMINALS)
+    str_op_table.insert(0, [' '] + TERMINALS + [END_TERMINAL])
 
     try:
         with open(OUT_FILENAME, "w") as f:
