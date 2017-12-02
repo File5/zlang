@@ -3,6 +3,7 @@
 
 TERMINALS = 'program var begin end . : ; ID , integer real boolean { } = let switch case for to do while loop readln writeln + - * / ( ) CONSTANT < <= > >= == !='.split(' ')
 
+OUT_FILENAME = 'operator-precedence-table.csv'
 
 class GrammarRule:
 
@@ -210,3 +211,108 @@ P ::= ( A ) | ID | CONSTANT"""
     for u, row in leftmost_and_rightmost_t.items():
         print(u, 'Lt ' + str(row['l']), 'Rt ' + str(row['r']), sep='\n', end='\n' + '*' * 80 + '\n')
     print('\n', end='')
+
+    op_table = []
+    for i in range(len(TERMINALS)):
+        op_table.append([' '] * len(TERMINALS))
+
+    def find_basis_symbols(ai):
+        result = []
+
+        for rule in rules:
+            search_pos = 0
+
+            while ai in rule.right[search_pos:]:
+                search_pos = rule.right.index(ai)
+
+                try:
+                    next = rule.right[search_pos + 1]
+                    if next in TERMINALS and next not in result:
+                        result.append(next)
+
+                    else:
+                        after_next = rule.right[search_pos + 2]
+                        if after_next in TERMINALS and after_next not in result:
+                            result.append(after_next)
+                            search_pos += 1
+                except IndexError:
+                    pass
+
+                finally:
+                    search_pos += 1
+
+        return result
+
+    def find_next_prev_symbols(ai, delta=1):
+        result = []
+
+        for rule in rules:
+            search_pos = 0
+            while ai in rule.right[search_pos:]:
+                search_pos = rule.right.index(ai)
+
+                try:
+                    next = rule.right[search_pos + delta]
+                    if next in NON_TERMINALS and next not in result:
+                        result.append(next)
+
+                except IndexError:
+                    pass
+
+                finally:
+                    search_pos += 1
+
+        return result
+
+    def find_precedes_symbols(ai):
+        return find_next_prev_symbols(ai, 1)
+
+    def find_follows_symbols(ai):
+        return find_next_prev_symbols(ai, -1)
+
+    def set_or_append_op_table(row, col, value):
+        if op_table[row][col] == ' ':
+            op_table[row][col] = value
+        else:
+            if value not in op_table[row][col]:
+                op_table[row][col] += value
+
+    for i, ai in enumerate(TERMINALS):
+        basis = find_basis_symbols(ai)
+
+        for bj in basis:
+            j = TERMINALS.index(bj)
+            set_or_append_op_table(i, j, '=')
+
+        precedes = find_precedes_symbols(ai)
+
+        for U in precedes:
+            symbols = leftmost_and_rightmost_t[U]['l']
+
+            for symbol in symbols:
+                j = TERMINALS.index(symbol)
+                set_or_append_op_table(i, j, '<')
+
+        follows = find_follows_symbols(ai)
+
+        for U in follows:
+            symbols = leftmost_and_rightmost_t[U]['r']
+
+            for symbol in symbols:
+                j = TERMINALS.index(symbol)
+                set_or_append_op_table(j, i, '>')
+
+    # print(str(op_table).replace('], ', '],\n '))
+
+    str_op_table = op_table[:]
+
+    for i, row in enumerate(str_op_table):
+        row.insert(0, TERMINALS[i])
+
+    str_op_table.insert(0, [' '] + TERMINALS)
+
+    with open(OUT_FILENAME, "w") as f:
+        for row in str_op_table:
+            f.write(";".join(map(lambda x : '"{}"'.format(x), row)) + '\n')
+
+    print("Operator precedence table has been written to file '{}'".format(OUT_FILENAME))
