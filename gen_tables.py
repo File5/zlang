@@ -318,20 +318,24 @@ P ::= ( A ) | ID | CONSTANT"""
 
     str_op_table.insert(0, [' '] + TERMINALS)
 
-    with open(OUT_FILENAME, "w") as f:
-        for row in str_op_table:
-            f.write(";".join(map(lambda x : '"{}"'.format(x), row)) + '\n')
+    try:
+        with open(OUT_FILENAME, "w") as f:
+            for row in str_op_table:
+                f.write(";".join(map(lambda x : '"{}"'.format(x), row)) + '\n')
+    except IOError:
+        print("ERROR: Can't write to file '{}'".format(OUT_FILENAME))
 
-    print("Operator precedence table has been written to file '{}'".format(OUT_FILENAME))
+    else:
+        print("DONE: Operator precedence table has been written to file '{}'".format(OUT_FILENAME))
 
-    if len(multiple_value_cells) > 0:
-        print()
-        print("WARNING: Table contains cells with multiple values!\nConflicts should be solved manually!\n")
+        if len(multiple_value_cells) > 0:
+            print()
+            print("WARNING: Table contains cells with multiple values!\nConflicts should be solved manually!\n")
 
-        print("List of cells with multiple values:")
+            print("List of cells with multiple values:")
 
-        str_cells = []
-        for i, j in multiple_value_cells:
-            str_cells.append("('{}' '{}')".format(TERMINALS[i], TERMINALS[j]))
+            str_cells = []
+            for i, j in multiple_value_cells:
+                str_cells.append("('{}' '{}')".format(TERMINALS[i], TERMINALS[j]))
 
-        print(" ".join(str_cells))
+            print(" ".join(str_cells))
