@@ -216,6 +216,8 @@ P ::= ( A ) | ID | CONSTANT"""
     for i in range(len(TERMINALS)):
         op_table.append([' '] * len(TERMINALS))
 
+    multiple_value_cells = []
+
     def find_basis_symbols(ai):
         result = []
 
@@ -252,6 +254,10 @@ P ::= ( A ) | ID | CONSTANT"""
                 search_pos = rule.right.index(ai)
 
                 try:
+                    # не использовать отрицательные значения!
+                    if search_pos + delta < 0:
+                        raise IndexError()
+
                     next = rule.right[search_pos + delta]
                     if next in NON_TERMINALS and next not in result:
                         result.append(next)
@@ -276,6 +282,7 @@ P ::= ( A ) | ID | CONSTANT"""
         else:
             if value not in op_table[row][col]:
                 op_table[row][col] += value
+                multiple_value_cells.append((row, col))
 
     for i, ai in enumerate(TERMINALS):
         basis = find_basis_symbols(ai)
@@ -316,3 +323,15 @@ P ::= ( A ) | ID | CONSTANT"""
             f.write(";".join(map(lambda x : '"{}"'.format(x), row)) + '\n')
 
     print("Operator precedence table has been written to file '{}'".format(OUT_FILENAME))
+
+    if len(multiple_value_cells) > 0:
+        print()
+        print("WARNING: Table contains cells with multiple values!\nConflicts should be solved manually!\n")
+
+        print("List of cells with multiple values:")
+
+        str_cells = []
+        for i, j in multiple_value_cells:
+            str_cells.append("('{}' '{}')".format(TERMINALS[i], TERMINALS[j]))
+
+        print(" ".join(str_cells))
