@@ -1,9 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# список терминальных символов
 TERMINALS = 'program var begin end . : ; ID , integer real boolean { } = let switch case for to do while loop readln writeln + - * / ( ) CONSTANT < <= > >= == !='.split(' ')
 
+# начальный символ грамматики
 START_NON_TERMINAL = 'PROGRAM'
+
+# грамматика
+# пробел - разделитель символов грамматики
+# левая и правая части разделяются символом '::='
+GRAMMAR = """
+PROGRAM ::= program var TYPE_DEFINITION_N begin OPERATOR_N end .
+TYPE_DEFINITION_N ::= TYPE_DEFINITION | TYPE_DEFINITION TYPE_DEFINITION_N
+TYPE_DEFINITION ::= ID_N : TYPE ;
+ID_N ::= ID | ID , ID_N
+TYPE ::= integer | real | boolean
+OPERATOR_N ::= OPERATOR | OPERATOR ; OPERATOR_N
+OPERATOR ::= COMPLEX_OPERATOR | ASSIGNMENT_OPERATOR | SWITCH_OPERATOR | FOR_OPERATOR | WHILE_OPERATOR | INPUT_OPERATOR | OUTPUT_OPERATOR
+COMPLEX_OPERATOR ::= { OPERATOR_N }
+ASSIGNMENT_OPERATOR ::= ID = EXPRESSION | let ID = EXPRESSION
+SWITCH_OPERATOR ::= switch EXPRESSION { CASE_N }
+CASE_N ::= CASE | CASE CASE_N
+CASE ::= case CONSTANT : OPERATOR
+FOR_OPERATOR ::= for ASSIGNMENT_OPERATOR to EXPRESSION do OPERATOR
+WHILE_OPERATOR ::= do while EXPRESSION OPERATOR loop
+INPUT_OPERATOR ::= readln ID_N
+OUTPUT_OPERATOR ::= writeln EXPRESSION_N
+EXPRESSION_N ::= EXPRESSION | EXPRESSION , EXPRESSION_N
+EXPRESSION ::= A < A | A <= A | A > A | A >= A | A == A | A != A | A
+A ::= A + T | A - T | T
+T ::= T * P | T / P | P
+P ::= ( A ) | ID | CONSTANT
+"""
 
 # Терминальные символы начала и конца цепочки. Не должны встречаться среди TERMINALS
 BEGIN_TERMINAL = 'BEGIN'
@@ -13,6 +42,9 @@ OUT_FILENAME = 'operator-precedence-table.csv'
 
 if BEGIN_TERMINAL in TERMINALS or END_TERMINAL in TERMINALS:
     raise ValueError("BEGIN_TERMINAL and END_TERMINAL should NOT be in TERMINALS")
+
+GRAMMAR = GRAMMAR.strip()
+
 
 class GrammarRule:
 
@@ -44,31 +76,10 @@ class GrammarRule:
         return None
 
 if __name__ == '__main__':
-    grammar = """PROGRAM ::= program var TYPE_DEFINITION_N begin OPERATOR_N end .
-TYPE_DEFINITION_N ::= TYPE_DEFINITION | TYPE_DEFINITION TYPE_DEFINITION_N
-TYPE_DEFINITION ::= ID_N : TYPE ;
-ID_N ::= ID | ID , ID_N
-TYPE ::= integer | real | boolean
-OPERATOR_N ::= OPERATOR | OPERATOR ; OPERATOR_N
-OPERATOR ::= COMPLEX_OPERATOR | ASSIGNMENT_OPERATOR | SWITCH_OPERATOR | FOR_OPERATOR | WHILE_OPERATOR | INPUT_OPERATOR | OUTPUT_OPERATOR
-COMPLEX_OPERATOR ::= { OPERATOR_N }
-ASSIGNMENT_OPERATOR ::= ID = EXPRESSION | let ID = EXPRESSION
-SWITCH_OPERATOR ::= switch EXPRESSION { CASE_N }
-CASE_N ::= CASE | CASE CASE_N
-CASE ::= case CONSTANT : OPERATOR
-FOR_OPERATOR ::= for ASSIGNMENT_OPERATOR to EXPRESSION do OPERATOR
-WHILE_OPERATOR ::= do while EXPRESSION OPERATOR loop
-INPUT_OPERATOR ::= readln ID_N
-OUTPUT_OPERATOR ::= writeln EXPRESSION_N
-EXPRESSION_N ::= EXPRESSION | EXPRESSION , EXPRESSION_N
-EXPRESSION ::= A < A | A <= A | A > A | A >= A | A == A | A != A | A
-A ::= A + T | A - T | T
-T ::= T * P | T / P | P
-P ::= ( A ) | ID | CONSTANT"""
     rules = []
 
     # генерация правил по текстовому представлению грамматики
-    for i, row in enumerate(grammar.split('\n')):
+    for i, row in enumerate(GRAMMAR.split('\n')):
         rule_list = row.split(' ')
 
         if rule_list[1] != '::=':
