@@ -89,7 +89,7 @@ class LexicalParser:
             else:
                 raise InvalidIdentifierError(self.line, self.line_pos - len(token_word), token_word)
         else:
-            if token_word == '==':
+            if token_word in ('==', '<=', '>=', '!='):
                 return Token.TYPE_DELIMITER
             if len(token_word) == 1 and not token_word.isdigit():
                 return Token.TYPE_DELIMITER
@@ -107,6 +107,21 @@ class LexicalParser:
             self._next() # parse first '='
             self._next() # parse second '='
             return '=='
+
+        if c == '<' and self._peek_next() == '=':
+            self._next() # parse '<'
+            self._next() # parse '='
+            return '<='
+
+        if c == '>' and self._peek_next() == '=':
+            self._next() # parse '>'
+            self._next() # parse '='
+            return '>='
+
+        if c == '!' and self._peek_next() == '=':
+            self._next() # parse '!'
+            self._next() # parse '='
+            return '!='
 
         if not predicate(c):
 
