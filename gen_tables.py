@@ -147,7 +147,7 @@ P ::= ( A ) | ID | CONSTANT"""
                     potential_symbols = leftmost_and_rightmost_nt[symbol]['l']
 
                     for potential_symbol in potential_symbols:
-                        if potential_symbol not in left_symbols:
+                        if potential_symbol not in left_symbols and potential_symbol not in additional_symbols:
                             additional_symbols.append(potential_symbol)
 
             changed = changed or len(additional_symbols) > 0
