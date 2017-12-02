@@ -92,7 +92,67 @@ P ::= ( A ) | ID | CONSTANT"""
 
     print("Rules:")
     print(*rules, sep='\n')
+    print('\n', end='')
 
-    
+    NON_TERMINALS = []
 
+    for rule in rules:
+        for item in [rule.left] + rule.right:
+            if item not in TERMINALS and item not in NON_TERMINALS:
+                NON_TERMINALS.append(item)
 
+    print("Non-terminals found: {}\n{}".format(len(NON_TERMINALS), NON_TERMINALS))
+    print('\n', end='')
+
+    def find_rules_with_left(left):
+        result = []
+
+        for rule in rules:
+            if rule.left == left:
+                result.append(rule)
+
+        return result
+
+    leftmost_and_rightmost_nt = {}
+
+    for non_terminal in NON_TERMINALS:
+        leftmost_and_rightmost_nt[non_terminal] = {}
+
+        leftmost_and_rightmost_nt[non_terminal]['l'] = []
+        leftmost_and_rightmost_nt[non_terminal]['r'] = []
+
+    # начальное заполнение
+    for rule in rules:
+        leftmost = leftmost_and_rightmost_nt[rule.left]['l']
+        symbol = rule.leftmost_symbol()
+        if symbol not in leftmost:
+            leftmost.append(symbol)
+
+        rightmost = leftmost_and_rightmost_nt[rule.left]['r']
+        symbol = rule.rightmost_symbol()
+        if symbol not in rightmost:
+            rightmost.append(symbol)
+
+    # дополнение вложенными нетерминалами
+    changed = True
+    while changed:
+        changed = False
+
+        for non_terminal in leftmost_and_rightmost_nt:
+            additional_symbols = []
+
+            left_symbols = leftmost_and_rightmost_nt[non_terminal]['l']
+            for symbol in left_symbols:
+                if symbol in NON_TERMINALS:
+                    potential_symbols = leftmost_and_rightmost_nt[symbol]['l']
+
+                    for potential_symbol in potential_symbols:
+                        if potential_symbol not in left_symbols:
+                            additional_symbols.append(potential_symbol)
+
+            changed = changed or len(additional_symbols) > 0
+            leftmost_and_rightmost_nt[non_terminal]['l'] += additional_symbols
+
+    for u, row in leftmost_and_rightmost_nt.items():
+        print(u, row)
+    print('\n', end='')
