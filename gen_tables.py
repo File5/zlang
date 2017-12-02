@@ -157,6 +157,56 @@ P ::= ( A ) | ID | CONSTANT"""
     for lr_key in ('l', 'r'):
         complete_table(leftmost_and_rightmost_nt, lr_key)
 
+    print("Non-terminal Leftmost and Rightmost symbols")
     for u, row in leftmost_and_rightmost_nt.items():
         print(u, 'L ' + str(row['l']), 'R ' + str(row['r']), sep='\n', end='\n' + '*' * 80 + '\n')
+    print('\n', end='')
+
+    leftmost_and_rightmost_t = {}
+
+    for non_terminal in NON_TERMINALS:
+        leftmost_and_rightmost_t[non_terminal] = {}
+
+        leftmost_and_rightmost_t[non_terminal]['l'] = []
+        leftmost_and_rightmost_t[non_terminal]['r'] = []
+
+    # начальное заполнение
+    for rule in rules:
+        leftmost = leftmost_and_rightmost_t[rule.left]['l']
+        symbol = rule.leftmost_terminal()
+        if symbol is not None and symbol not in leftmost:
+            leftmost.append(symbol)
+
+        rightmost = leftmost_and_rightmost_t[rule.left]['r']
+        symbol = rule.rightmost_terminal()
+        if symbol is not None and symbol not in rightmost:
+            rightmost.append(symbol)
+
+    def complete_t_table(leftmost_and_rightmost_nt, lr_key, leftmost_and_rightmost_t):
+        changed = True
+        while changed:
+            changed = False
+
+            for non_terminal in leftmost_and_rightmost_nt:
+                additional_symbols = []
+
+                left_nt_symbols = leftmost_and_rightmost_nt[non_terminal][lr_key]
+                left_t_symbols = leftmost_and_rightmost_t[non_terminal][lr_key]
+                for symbol in left_nt_symbols:
+                    if symbol in NON_TERMINALS:
+                        potential_symbols = leftmost_and_rightmost_t[symbol][lr_key]
+
+                        for potential_symbol in potential_symbols:
+                            if potential_symbol not in left_t_symbols and potential_symbol not in additional_symbols:
+                                additional_symbols.append(potential_symbol)
+
+                changed = changed or len(additional_symbols) > 0
+                leftmost_and_rightmost_t[non_terminal][lr_key] += additional_symbols
+
+    for lr_key in ('l', 'r'):
+        complete_t_table(leftmost_and_rightmost_nt, lr_key, leftmost_and_rightmost_t)
+
+    print("Terminal Leftmost and Rightmost symbols")
+    for u, row in leftmost_and_rightmost_t.items():
+        print(u, 'Lt ' + str(row['l']), 'Rt ' + str(row['r']), sep='\n', end='\n' + '*' * 80 + '\n')
     print('\n', end='')
