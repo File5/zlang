@@ -51,7 +51,7 @@ if __name__ == '__main__':
                     e123e = true
             };
             for b123b = 1 to 30 do
-                writeln 1 + 2;
+                writeln 1 + 2 \ 3 + 4 \ a123a / d123d;
             do while a123a == 123;
                 a123a = 1234
             loop

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # список терминальных символов
-TERMINALS = 'program var begin end . : ; ID , integer real boolean { } = let switch case for to do while loop readln writeln + - * / ( ) CONSTANT < <= > >= == !='.split(' ')
+TERMINALS = 'program var begin end . : ; ID , integer real boolean { } = let switch case for to do while loop readln writeln + - * / ( ) CONSTANT < <= > >= == != \\'.split(' ')
 
 # начальный символ грамматики
 START_NON_TERMINAL = 'PROGRAM'
@@ -26,7 +26,7 @@ CASE_CONTENT ::= CONSTANT : OPERATOR
 FOR_OPERATOR ::= for ASSIGNMENT_OPERATOR to EXPRESSION do OPERATOR
 WHILE_OPERATOR ::= do while EXPRESSION ; OPERATOR loop
 INPUT_OPERATOR ::= readln ID_N
-OUTPUT_OPERATOR ::= writeln EXPRESSION
+OUTPUT_OPERATOR ::= writeln EXPRESSION | OUTPUT_OPERATOR \ EXPRESSION
 EXPRESSION ::= A < A | A <= A | A > A | A >= A | A == A | A != A | A
 A ::= A + T | A - T | T
 T ::= T * P | T / P | P
