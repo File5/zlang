@@ -49,10 +49,10 @@ if __name__ == '__main__':
                     d123d = 5.0
                 case 15:
                     e123e = true
-            }
+            };
             for b123b = 1 to 30 do
-                writeln 1 + 2
-            do while a123a == 123
+                writeln 1 + 2;
+            do while a123a == 123;
                 a123a = 1234
             loop
         end.
