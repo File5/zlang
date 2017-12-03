@@ -56,3 +56,15 @@ class SyntaxAnalyzeError(LexicalError):
 
     def __init__(self, line, pos, expected, actual):
         super(SyntaxAnalyzeError, self).__init__(line, pos, expected, actual)
+        
+        
+class SyntaxPrecedenceError(ParseError):
+    
+    def __init__(self, line, pos):
+        super(SyntaxPrecedenceError, self).__init__(line, pos)
+        
+
+class SyntaxRuleError(ParseError):
+    
+    def __init__(self, line, pos):
+        super(SyntaxRuleError, self).__init__(line, pos)
