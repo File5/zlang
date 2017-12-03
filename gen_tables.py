@@ -37,6 +37,9 @@ P ::= ( A ) | ID | CONSTANT
 BEGIN_TERMINAL = 'BEGIN'
 END_TERMINAL = 'END'
 
+# Нетерминал, который заменяет все другие нетерминалы в остовной грамматике
+SKELETON_NON_TERMINAL = 'S'
+
 OUT_FILENAME = 'operator-precedence-table.csv'
 
 if BEGIN_TERMINAL in TERMINALS or END_TERMINAL in TERMINALS:
@@ -133,6 +136,31 @@ class Grammar:
                     NON_TERMINALS.append(item)
 
         self.non_terminals = NON_TERMINALS
+
+        self.skeleton_rules = deepcopy(self.rules)
+        for rule in self.skeleton_rules:
+            rule.left = SKELETON_NON_TERMINAL
+
+            new_right = []
+            for item in rule.right:
+                if item in NON_TERMINALS:
+                    new_right.append(SKELETON_NON_TERMINAL)
+                else:
+                    new_right.append(item)
+            rule.right = new_right
+
+        new_skeleton_rules = []
+        for rule in self.skeleton_rules:
+            if len(rule.right) == 1 and rule.right[0] == SKELETON_NON_TERMINAL:
+                continue
+            new_skeleton_rules.append(rule)
+
+        self.skeleton_rules = new_skeleton_rules
+
+        if calc_print:
+            print("Skeleton rules:")
+            print(*self.skeleton_rules, sep='\n')
+            print('\n', end='')
 
         if calc_print:
             print("Non-terminals found: {}\n{}".format(len(NON_TERMINALS), NON_TERMINALS))

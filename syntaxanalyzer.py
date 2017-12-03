@@ -22,15 +22,15 @@ class GrammarNode(Token):
         return "<GrammarNode {}>".format(str(self))
 
     def to_format_str(self, indent=0):
-        result = " " * indent + self.value + "[\n"
+        result = " " * indent + self.value + " [\n"
 
         for token in self.content:
-            if token is GrammarNode:
+            if type(token) is GrammarNode:
                 result += token.to_format_str(indent + 2)
             else:
-                result += " " * (indent + 2) + token.value
+                result += " " * (indent + 2) + token.value + '\n'
 
-        result += " " * indent + "]"
+        result += " " * indent + "]\n"
         return result
 
 
@@ -50,8 +50,8 @@ class SyntaxAnalyzer:
             return (x.value in self.g.terminals) or (x.value in constants) or (x.value in keywords) or\
                    (x.value in ids) or (x.value in delimiters) or (x == begin_token) or (x == end_token)
 
-        def get_top_terminal():
-            for x in reversed(self.stack):
+        def get_top_terminal(token_list=self.stack):
+            for x in reversed(token_list):
                 if is_terminal(x):
                     return x
 
@@ -83,7 +83,7 @@ class SyntaxAnalyzer:
 
         def find_rule_with_right(token_list):
             right = list(map(get_token_for_rule, token_list))
-            for rule in self.g.rules:
+            for rule in self.g.skeleton_rules:
                 if rule.right == right:
                     return rule
             return None
@@ -91,20 +91,32 @@ class SyntaxAnalyzer:
         def shift(token_list):
             self.stack.append(token_list.pop(0))
 
-        def reduce(token_list):
-            aj = get_next_token()
-            basis = [self.stack.pop()]
+        def has_terminal(token_list):
+            for i in token_list:
+                if is_terminal(i):
+                    return True
+            return False
 
+        def reduce():
+            basis = []
+
+            while not has_terminal(basis):
+                basis.append(self.stack.pop())
+
+            aj = get_top_terminal(basis)
             sj = get_top_terminal()
             precedence = get_op_table_content(sj, aj)
             while precedence == '=':
                 basis.append(self.stack.pop())
+                aj = get_top_terminal(basis)
                 sj = get_top_terminal()
                 precedence = get_op_table_content(sj, aj)
 
             stack_top = self.stack[-1]
-            if stack_top in self.g.non_terminals:
+            if not is_terminal(stack_top):
                 basis.append(self.stack.pop())
+
+            basis.reverse()
 
             rule = find_rule_with_right(basis)
             if rule is not None:
@@ -126,6 +138,6 @@ class SyntaxAnalyzer:
             if precedence == '=' or precedence == '<':
                 shift(token_list)
             elif precedence == '>':
-                reduce(token_list)
+                reduce()
             else:
                 raise SyntaxPrecedenceError(*aj.pos)

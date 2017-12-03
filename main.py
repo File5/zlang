@@ -72,12 +72,12 @@ if __name__ == '__main__':
         s = SyntaxAnalyzer()
         nodes = s.parse(
             token_list,
-            lexicalAnalyzer.constants,
+            lexicalAnalyzer.constants + ['true', 'false'],
             lexicalAnalyzer.keywords,
             lexicalAnalyzer.identifiers,
             lexicalAnalyzer.delimiters
         )
-        print(nodes)
+        print(nodes[1].to_format_str())
 
     except InvalidIdentifierError as e:
         print("Invalid identifier error at {}:{} : ".format(*e.get_line_pos()) + e.get_info(), file=stderr)
