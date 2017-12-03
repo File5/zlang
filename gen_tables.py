@@ -26,8 +26,7 @@ CASE ::= case CONSTANT : OPERATOR
 FOR_OPERATOR ::= for ASSIGNMENT_OPERATOR to EXPRESSION do OPERATOR
 WHILE_OPERATOR ::= do while EXPRESSION OPERATOR loop
 INPUT_OPERATOR ::= readln ID_N
-OUTPUT_OPERATOR ::= writeln EXPRESSION_N
-EXPRESSION_N ::= EXPRESSION | EXPRESSION , EXPRESSION_N
+OUTPUT_OPERATOR ::= writeln EXPRESSION
 EXPRESSION ::= A < A | A <= A | A > A | A >= A | A == A | A != A | A
 A ::= A + T | A - T | T
 T ::= T * P | T / P | P
@@ -44,6 +43,9 @@ if BEGIN_TERMINAL in TERMINALS or END_TERMINAL in TERMINALS:
     raise ValueError("BEGIN_TERMINAL and END_TERMINAL should NOT be in TERMINALS")
 
 GRAMMAR = GRAMMAR.strip()
+
+
+from copy import deepcopy
 
 
 class GrammarRule:
@@ -368,7 +370,7 @@ class Grammar:
         self.op_table = op_table
         # print(str(op_table).replace('], ', '],\n '))
 
-        str_op_table = op_table[:]
+        str_op_table = deepcopy(op_table)
 
         for i, row in enumerate(str_op_table):
             if i < len(TERMINALS):

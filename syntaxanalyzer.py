@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from gen_tables import Grammar
-from main import Token
+from lexicalanalyzer import Token
 from exceptions import SyntaxPrecedenceError, SyntaxRuleError
 
 CONSTANT_TERMINAL = 'CONSTANT'
@@ -69,13 +69,20 @@ class SyntaxAnalyzer:
             else:
                 return self.g.terminals.index(x)
 
+        def get_token_for_rule(x):
+            if is_terminal(x):
+                index = get_op_table_index(x.value)
+                return self.g.terminals[index]
+            else:
+                return x.value
+
         def get_op_table_content(row_item, col_item):
             row = get_op_table_index(row_item.value)
             col = get_op_table_index(col_item.value)
             return self.g.op_table[row][col]
 
         def find_rule_with_right(token_list):
-            right = list(map(lambda x: x.value, token_list))
+            right = list(map(get_token_for_rule, token_list))
             for rule in self.g.rules:
                 if rule.right == right:
                     return rule
