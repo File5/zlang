@@ -292,7 +292,7 @@ class Grammar:
                 search_pos = 0
 
                 while ai in rule.right[search_pos:]:
-                    search_pos = rule.right.index(ai)
+                    search_pos = rule.right.index(ai, search_pos)
 
                     try:
                         next = rule.right[search_pos + 1]
@@ -318,7 +318,7 @@ class Grammar:
             for rule in self.rules:
                 search_pos = 0
                 while ai in rule.right[search_pos:]:
-                    search_pos = rule.right.index(ai)
+                    search_pos = rule.right.index(ai, search_pos)
 
                     try:
                         # не использовать отрицательные значения!
