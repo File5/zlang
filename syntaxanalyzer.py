@@ -33,6 +33,8 @@ class GrammarNode(Token):
         result += " " * indent + "]\n"
         return result
 
+    def get_line_pos(self):
+        return self.pos
 
 class SyntaxAnalyzer:
 
