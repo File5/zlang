@@ -6,6 +6,7 @@ from exceptions import InvalidIdentifierError, UndefinedIdentifierError
 from syntaxanalyzer import SyntaxAnalyzer, GrammarNode
 from lexicalanalyzer import LexicalParser, Token
 from semanticanalyzer import SemanticAnalyzer
+from asmtranslator import AsmTranslator
 
 
 class Compiler:
@@ -72,7 +73,7 @@ if __name__ == '__main__':
 
         s = SyntaxAnalyzer()
         nodes = s.parse(
-            token_list,
+            token_list[:],
             lexicalAnalyzer.constants + ['true', 'false'],
             lexicalAnalyzer.keywords,
             lexicalAnalyzer.identifiers,
@@ -153,6 +154,17 @@ if __name__ == '__main__':
             print("Semantic error: {}".format(e))
         else:
             print("Semantic analyze finished: OK")
+
+        begin = 0
+        end = 0
+        for i, token in enumerate(token_list):
+            if token.value == "begin":
+                begin = i
+            elif token.value == "end":
+                end = i
+        program_token_list = token_list[begin + 1 : end]
+        asmt = AsmTranslator([])
+        poliz = asmt.to_asm(program_token_list)
 
     except InvalidIdentifierError as e:
         print("Invalid identifier error at {}:{} : ".format(*e.get_line_pos()) + e.get_info(), file=stderr)
