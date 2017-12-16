@@ -25,34 +25,37 @@ class AsmSyntax:
         return result
 
     def mov_constant_to(self, to, constant):
-        return "RD #" + constant + "\nWR " + to
+        return "RD #" + str(constant) + "\nWR " + str(to)
+
+    def inc_mem(self, mem):
+        return "RD " + str(mem) + "\n" + self.add_constant(1) + "\nWR " + str(mem)
 
     def mov_id_to(self, to, i):
-        return "RD " + self.get_mem_for_id(i) + "\nWR " + to
+        return "RD " + str(self.get_mem_for_id(i)) + "\nWR " + str(to)
 
     def add_constant(self, constant):
-        return "ADD #" + constant
+        return "ADD #" + str(constant)
 
     def add_id(self, i):
-        return "ADD " + self.get_mem_for_id(i)
+        return "ADD " + str(self.get_mem_for_id(i))
 
     def sub_constant(self, constant):
-        return "SUB #" + constant
+        return "SUB #" + str(constant)
 
     def sub_id(self, i):
-        return "SUB " + self.get_mem_for_id(i)
+        return "SUB " + str(self.get_mem_for_id(i))
 
     def mul_constant(self, constant):
-        return "MUL #" + constant
+        return "MUL #" + str(constant)
 
     def mul_id(self, i):
-        return "MUL " + self.get_mem_for_id(i)
+        return "MUL " + str(self.get_mem_for_id(i))
 
     def div_constant(self, constant):
-        return "DIV #" + constant
+        return "DIV #" + str(constant)
 
     def div_id(self, i):
-        return "DIV " + self.get_mem_for_id(i)
+        return "DIV " + str(self.get_mem_for_id(i))
 
     def in_(self):
         return "IN"
@@ -78,6 +81,11 @@ class AsmSyntax:
     def jnz_label(self, label):
         return "JNZ " + label
 
+    def rd_constant(self, constant):
+        return "RD #" + str(constant)
+
+    def wr_mem(self, mem):
+        return "WR " + str(mem)
 
 class AsmCommand:
 
@@ -134,6 +142,28 @@ class SwitchToken:
         return self.end_label
 
 
+class ForToken:
+
+    def __init__(self, mem, const1, const2, for_label):
+        self.mem = mem
+        self.const1 = const1
+        self.const2 = const2
+        self.for_label = for_label
+        self.end_for_label = FutureLabel()
+
+    def __repr__(self):
+        return "<for mem={} const1={} const2={}>".format(self.mem, self.const1, self.const2)
+
+    def get_for_label(self):
+        return self.for_label
+
+    def get_mem(self):
+        return self.mem
+
+    def get_end_for_label(self):
+        return self.end_for_label
+
+
 class JmpToken:
 
     def __init__(self, label):
@@ -151,6 +181,9 @@ class CmpToken:
 
     def __repr__(self):
         return "<CMP {}, JE {}>".format(self.constant, self.je_label)
+
+    def __str__(self):
+        return "SUB #{}\nJE {}\nADD #{}".format(self.constant, str(self.je_label), self.constant)
 
 
 class AsmTranslator:
@@ -218,8 +251,8 @@ class AsmTranslator:
             if extra_pop and len(op_stack) > 0:
                 op_stack.pop()
 
-        def pop_until_any_of(*x, extra_pop=True):
-            while len(op_stack) > 0 and op_stack[-1] not in x:
+        def pop_until_any_of(*x, types=list(), extra_pop=True):
+            while len(op_stack) > 0 and (op_stack[-1] not in x and type(op_stack[-1]) not in types):
                 result_list.append(op_stack.pop())
             if extra_pop and len(op_stack) > 0:
                 op_stack.pop()
@@ -234,7 +267,7 @@ class AsmTranslator:
                 result_list.append(current_value)
                 token_list.pop(0)
 
-            elif current_value in (")", "loop", ";", "}", "end", ":", "case"):
+            elif current_value in (")", "loop", ";", "}", "end", ":", "case", "for"):
                 if current_value == ")":
                     pop_until("(")
                     token_list.pop(0)
@@ -243,7 +276,7 @@ class AsmTranslator:
                     result_list.append(op_stack.pop())
                     token_list.pop(0)
                 elif current_value == ";" or current_value == "end":
-                    pop_until_any_of("for", "while", "switch", "case", "=", extra_pop=False)
+                    pop_until_any_of("while", "case", "=", types=[ForToken, SwitchToken], extra_pop=False)
                     if len(op_stack) > 0:
                         result_list.append(op_stack.pop())
                     token_list.pop(0)
@@ -286,6 +319,18 @@ class AsmTranslator:
                     token_list.pop(0)
                 elif current_value == ":":
                     token_list.pop(0)
+                elif current_value == "for":
+                    for_tokens = token_list[:7]
+                    token_list = token_list[7:]
+                    mem = self.asm_syntax.get_mem_for_id(for_tokens[1].value)
+                    const1 = for_tokens[3].value
+                    const2 = for_tokens[5].value
+                    for_label = AsmLabel(self.asm_syntax.get_label_for("for"))
+                    f = ForToken(mem, const1, const2, for_label)
+                    op_stack.append(f)
+                    result_list.append(self.asm_syntax.mov_constant_to(mem, const1))
+                    result_list.append(for_label)
+                    result_list.append(CmpToken(const2, f.get_end_for_label()))
 
             else:
                 current_priority = self.input_priority[current_value]
@@ -311,6 +356,14 @@ class AsmTranslator:
                 op_stack.pop() # {
                 op_stack.pop() # switch
                 op_stack.append(SwitchToken(len(result_list)))
+            if current_value == ";" and len(op_stack) > 0 and type(op_stack[-1]) is ForToken:
+                # finish for
+                f = op_stack.pop()
+                end_for_label = AsmLabel(self.asm_syntax.get_label_for("end_for"))
+                f.get_end_for_label().set_label(end_for_label)
+                result_list.append(self.asm_syntax.inc_mem(f.get_mem()))
+                result_list.append(JmpToken(f.get_for_label()))
+                result_list.append(end_for_label)
 
         print(result_list, op_stack, list(map(lambda x: x.value, token_list)), sep='\n')
         return result_list
