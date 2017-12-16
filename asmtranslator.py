@@ -87,12 +87,12 @@ class AsmTranslator:
             "=" : 100,
             "(" : 100,
             "switch" : 100,
-            "case" : 100,
+            "case" : 1,
             "for" : 100,
             "while" : 100,
             "readln" : 100,
             "writeln" : 100,
-            "{" : 99,
+            "{" : 1,
             ":" : 1,
             "do" : 1,
             ")" : 1,
@@ -112,7 +112,7 @@ class AsmTranslator:
         }
         self.op_stack_priority = {
             "=" : 0,
-            ")" : 1,
+            "(" : 0,
             "{" : 0,
             "switch" : 0,
             "case" : 0,
@@ -150,7 +150,7 @@ class AsmTranslator:
                 op_stack.pop()
 
         while len(token_list) > 0:
-            print("STEP", result_list, op_stack, list(map(lambda x: x.value, token_list)), sep='\n')
+            print("STEP", result_list, op_stack, token_list[0].value, sep='\n')
             current_token = token_list[0]
             current_value = current_token.value
 
@@ -159,7 +159,7 @@ class AsmTranslator:
                 result_list.append(current_value)
                 token_list.pop(0)
 
-            elif current_value in (")", "loop", ";", "}", "end", ":"):
+            elif current_value in (")", "loop", ";", "}", "end", ":", "case"):
                 if current_value == ")":
                     pop_until("(")
                     token_list.pop(0)
@@ -170,6 +170,11 @@ class AsmTranslator:
                 elif current_value == ";" or current_value == "end":
                     pop_until_any_of("for", "while", "switch", "case", "=", extra_pop=False)
                     result_list.append(op_stack.pop())
+                    token_list.pop(0)
+                elif current_value == "case":
+                    pop_until("{", extra_pop=False)
+                    # do not pop '{'
+                    # result_list.append(op_stack.pop())
                     token_list.pop(0)
                 elif current_value == "}":
                     pop_until("{")
