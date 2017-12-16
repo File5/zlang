@@ -44,18 +44,18 @@ if __name__ == '__main__':
             e123e, f123f : boolean;
         begin
             let a123a = 123;
-            c123c = 12.3;
+            c123c = 123;
             f123f = false;
             switch 12 + 3 {
                 case 1:
-                    d123d = 5.0
+                    d123d = 50
                 case 15:
                     e123e = true
             };
             for b123b = 1 to 30 do
                 a123a = 1 * 2;
             do while a123a == 123;
-                a123a = 1234
+                a123a = 124
             loop
         end.
     """
@@ -163,8 +163,10 @@ if __name__ == '__main__':
             elif token.value == "end":
                 end = i
         program_token_list = token_list[begin + 1 : end]
-        asmt = AsmTranslator([])
-        poliz = asmt.to_asm(program_token_list)
+        asmt = AsmTranslator(lexicalAnalyzer.constants, lexicalAnalyzer.identifiers)
+        asm_lines = "\n".join(asmt.to_asm(program_token_list))
+
+        print(asm_lines)
 
     except InvalidIdentifierError as e:
         print("Invalid identifier error at {}:{} : ".format(*e.get_line_pos()) + e.get_info(), file=stderr)

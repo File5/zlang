@@ -5,9 +5,13 @@
 class AsmSyntax:
 
     def __init__(self):
+        self.tmp_mem = 499
         self.next_mem = 500
         self.id_mem = {}
         self.next_label = 0
+
+    def get_tmp_mem(self):
+        return self.tmp_mem
 
     def get_mem_for_id(self, i):
         if i in self.id_mem:
@@ -36,11 +40,17 @@ class AsmSyntax:
     def add_constant(self, constant):
         return "ADD #" + str(constant)
 
+    def add_mem(self, mem):
+        return "ADD " + str(mem)
+
     def add_id(self, i):
         return "ADD " + str(self.get_mem_for_id(i))
 
     def sub_constant(self, constant):
         return "SUB #" + str(constant)
+
+    def sub_mem(self, mem):
+        return "SUB " + str(mem)
 
     def sub_id(self, i):
         return "SUB " + str(self.get_mem_for_id(i))
@@ -48,11 +58,17 @@ class AsmSyntax:
     def mul_constant(self, constant):
         return "MUL #" + str(constant)
 
+    def mul_mem(self, mem):
+        return "MUL " + str(mem)
+
     def mul_id(self, i):
         return "MUL " + str(self.get_mem_for_id(i))
 
     def div_constant(self, constant):
         return "DIV #" + str(constant)
+
+    def div_mem(self, mem):
+        return "DIV " + str(mem)
 
     def div_id(self, i):
         return "DIV " + str(self.get_mem_for_id(i))
@@ -84,8 +100,24 @@ class AsmSyntax:
     def rd_constant(self, constant):
         return "RD #" + str(constant)
 
+    def rd_mem(self, mem):
+        return "RD " + str(mem)
+
     def wr_mem(self, mem):
         return "WR " + str(mem)
+
+    def push_constant(self, constant):
+        return self.rd_constant(constant) + "\nWR R1\nPUSH R1"
+
+    def push_mem(self, mem):
+        return self.rd_mem(mem) + "\nWR R1\nPUSH R1"
+
+    def pop(self):
+        return "POP R1\nRD R1"
+
+    def pop_mem(self, mem):
+        return self.pop() + "\n" + self.wr_mem(mem)
+
 
 class AsmCommand:
 
@@ -213,8 +245,9 @@ class CmpToken:
 
 class AsmTranslator:
 
-    def __init__(self, non_operators):
-        self.non_operators = non_operators
+    def __init__(self, constants, identifiers):
+        self.constants = constants
+        self.identifiers = identifiers
         self.input_priority = {
             "=" : 100,
             "(" : 100,
@@ -267,6 +300,63 @@ class AsmTranslator:
         self.asm_syntax = AsmSyntax()
 
     def to_asm(self, token_list):
+        poliz = self.to_poliz(token_list)
+        asm_cmds = []
+
+        def append_bin_op_to(cmd_list, op):
+            op_cmd = self.asm_syntax.add_mem(self.asm_syntax.get_tmp_mem())
+            if op == "-":
+                op_cmd = self.asm_syntax.sub_mem(self.asm_syntax.get_tmp_mem())
+            elif op == "*":
+                op_cmd = self.asm_syntax.mul_mem(self.asm_syntax.get_tmp_mem())
+            elif op_cmd == "/":
+                op_cmd = self.asm_syntax.div_mem(self.asm_syntax.get_tmp_mem())
+
+            for i in [
+                self.asm_syntax.pop_mem(self.asm_syntax.get_tmp_mem()),
+                self.asm_syntax.pop(),
+                op_cmd,
+                self.asm_syntax.wr_mem(self.asm_syntax.get_tmp_mem()),
+                self.asm_syntax.push_mem(self.asm_syntax.get_tmp_mem())
+            ]:
+                cmd_list.append(i)
+
+        for i, cmd in enumerate(poliz):
+            if cmd in self.constants:
+                asm_cmds.append(self.asm_syntax.push_constant(cmd))
+            elif cmd in self.identifiers:
+                asm_cmds.append(self.asm_syntax.push_mem(self.asm_syntax.get_mem_for_id(cmd)))
+            elif type(cmd) is str and cmd in "+-*/":
+                append_bin_op_to(asm_cmds, cmd)
+            elif cmd == "==":
+                append_bin_op_to(asm_cmds, "-")
+            elif cmd == "=":
+                identifier = asm_cmds[-2]
+                asm_cmds += [
+                    self.asm_syntax.pop_mem(self.asm_syntax.get_tmp_mem()),
+                    self.asm_syntax.pop(),
+                    self.asm_syntax.rd_mem(self.asm_syntax.get_tmp_mem()),
+                    self.asm_syntax.wr_mem(self.asm_syntax.get_mem_for_id(identifier))
+                ]
+            elif type(cmd) is FutureLabel or type(cmd) is AsmLabel:
+                asm_cmds.append(str(cmd) + ":")
+            elif type(cmd) is JmpToken or type(cmd) is JnzToken or type(cmd) is CmpToken:
+                asm_cmds.append(str(cmd))
+            elif cmd in ("true", "false"):
+                constant = 0
+                if cmd == "true":
+                    constant = 1
+                asm_cmds.append(self.asm_syntax.push_constant(constant))
+            elif cmd == "let":
+                continue
+            elif type(cmd) is str:
+                asm_cmds.append(cmd)
+            else:
+                print("Command not printed: ", cmd, repr(cmd))
+
+        return asm_cmds
+
+    def to_poliz(self, token_list):
         result_list = []
         op_stack = []
 
