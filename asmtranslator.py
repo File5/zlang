@@ -164,6 +164,22 @@ class ForToken:
         return self.end_for_label
 
 
+class WhileToken:
+
+    def __init__(self, while_label):
+        self.while_label = while_label
+        self.end_while_label = FutureLabel()
+
+    def __repr__(self):
+        return "<while>"
+
+    def get_while_label(self):
+        return self.while_label
+
+    def get_end_while_label(self):
+        return self.end_while_label
+
+
 class JmpToken:
 
     def __init__(self, label):
@@ -171,6 +187,15 @@ class JmpToken:
 
     def __repr__(self):
         return "JMP {}".format(self.label)
+
+
+class JnzToken:
+
+    def __init__(self, label):
+        self.label = label
+
+    def __repr__(self):
+        return "JNZ {}".format(self.label)
 
 
 class CmpToken:
@@ -183,7 +208,7 @@ class CmpToken:
         return "<CMP {}, JE {}>".format(self.constant, self.je_label)
 
     def __str__(self):
-        return "SUB #{}\nJE {}\nADD #{}".format(self.constant, str(self.je_label), self.constant)
+        return "SUB #{}\nJZ {}\nADD #{}".format(self.constant, str(self.je_label), self.constant)
 
 
 class AsmTranslator:
@@ -272,12 +297,18 @@ class AsmTranslator:
                     pop_until("(")
                     token_list.pop(0)
                 elif current_value == "loop":
-                    pop_until("while", False)
-                    result_list.append(op_stack.pop())
+                    pop_until_any_of([], types=[WhileToken], extra_pop=False)
+                    # finish while
+                    w = op_stack.pop()
+                    end_while_label = AsmLabel(self.asm_syntax.get_label_for("end_while"))
+                    w.get_end_while_label().set_label(end_while_label)
+                    result_list.append(JmpToken(w.get_while_label()))
+                    result_list.append(end_while_label)
+
                     token_list.pop(0)
                 elif current_value == ";" or current_value == "end":
-                    pop_until_any_of("while", "case", "=", types=[ForToken, SwitchToken], extra_pop=False)
-                    if len(op_stack) > 0:
+                    pop_until_any_of("while", "case", "=", types=[ForToken, SwitchToken, WhileToken], extra_pop=False)
+                    if len(op_stack) > 0 and type(op_stack[-1]) is not WhileToken:
                         result_list.append(op_stack.pop())
                     token_list.pop(0)
                 elif current_value == "case":
@@ -364,6 +395,23 @@ class AsmTranslator:
                 result_list.append(self.asm_syntax.inc_mem(f.get_mem()))
                 result_list.append(JmpToken(f.get_for_label()))
                 result_list.append(end_for_label)
+            if op_stack[-2:] == ["do", "while"]:
+                # before condition
+                op_stack.pop()  # while
+                op_stack.pop()  # do
+                while_label = AsmLabel(self.asm_syntax.get_label_for("while"))
+                result_list.append(while_label)
+                op_stack.append(WhileToken(while_label))
+
+            if len(op_stack) > 0 and type(op_stack[-1]) is WhileToken and current_value == ";":
+                # after condition
+                # find nearest "<while>"
+                w = None
+                for t in reversed(op_stack):
+                    if type(t) is WhileToken:
+                        w = t
+                        break
+                result_list.append(JnzToken(w.get_end_while_label()))
 
         print(result_list, op_stack, list(map(lambda x: x.value, token_list)), sep='\n')
         return result_list
