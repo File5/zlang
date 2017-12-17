@@ -221,13 +221,13 @@ class JmpToken:
         return "JMP {}".format(self.label)
 
 
-class JnzToken:
+class JzToken:
 
     def __init__(self, label):
         self.label = label
 
     def __repr__(self):
-        return "JNZ {}".format(self.label)
+        return "JZ {}".format(self.label)
 
 
 class CmpToken:
@@ -334,7 +334,7 @@ class AsmTranslator:
                 asm_cmds.append(self.asm_syntax.push_mem(self.asm_syntax.get_mem_for_id(cmd)))
             elif type(cmd) is str and cmd in "+-*/":
                 append_bin_op_to(asm_cmds, cmd)
-            elif cmd == "==":
+            elif cmd == "!=":
                 append_bin_op_to(asm_cmds, "-")
             elif cmd == "=":
                 identifier = current_stack[-2]
@@ -348,7 +348,7 @@ class AsmTranslator:
                 current_stack.pop()
             elif type(cmd) is FutureLabel or type(cmd) is AsmLabel:
                 asm_cmds.append(str(cmd) + ":")
-            elif type(cmd) is JmpToken or type(cmd) is JnzToken or type(cmd) is CmpToken:
+            elif type(cmd) is JmpToken or type(cmd) is JzToken or type(cmd) is CmpToken:
                 asm_cmds.append(str(cmd))
             elif cmd in ("true", "false"):
                 constant = 0
@@ -510,7 +510,7 @@ class AsmTranslator:
                     if type(t) is WhileToken:
                         w = t
                         break
-                result_list.append(JnzToken(w.get_end_while_label()))
+                result_list.append(JzToken(w.get_end_while_label()))
 
         print(result_list, op_stack, list(map(lambda x: x.value, token_list)), sep='\n')
         return result_list

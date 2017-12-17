@@ -44,8 +44,19 @@ if __name__ == '__main__':
             e123e, f123f : boolean;
         begin
             a123a = 0;
-            for b123b = 1 to 10 do
-                a123a = a123a + b123b;
+            b123b = 1;
+            switch a123a + 10 {
+                case 10:
+                    {
+                        a123a = 10;
+                        b123b = 10
+                    }
+                case 11:
+                    {
+                        a123a = 11;
+                        b123b = 11
+                    }
+            }
         end.
     """
     try:
