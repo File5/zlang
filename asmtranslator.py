@@ -485,6 +485,7 @@ class AsmTranslator:
             if op_stack[-2:] == ["switch", "{"]:
                 op_stack.pop() # {
                 op_stack.pop() # switch
+                result_list.append(self.asm_syntax.pop())
                 op_stack.append(SwitchToken(len(result_list)))
             if current_value == ";" and len(op_stack) > 0 and type(op_stack[-1]) is ForToken:
                 # finish for
@@ -510,6 +511,7 @@ class AsmTranslator:
                     if type(t) is WhileToken:
                         w = t
                         break
+                result_list.append(self.asm_syntax.pop())
                 result_list.append(JzToken(w.get_end_while_label()))
 
         print(result_list, op_stack, list(map(lambda x: x.value, token_list)), sep='\n')
