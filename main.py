@@ -39,12 +39,13 @@ if __name__ == '__main__':
     program = """
         program
         var
-            a123a, b123b, c123c : integer;
+            a123a, b123b : integer;
+            c123c, d123d : real;
+            e123e, f123f : boolean;
         begin
-            a123a = 1;
-            c123c = 2;
-            c123c = a123a + a123a + c123c;
-            b123b = a123a + c123c;
+            a123a = 0;
+            for b123b = 1 to 10 do
+                a123a = a123a + b123b;
         end.
     """
     try:
@@ -155,6 +156,9 @@ if __name__ == '__main__':
         asm_lines = "\n".join(asmt.to_asm(program_token_list))
 
         print(asm_lines)
+        asm_lines += "\nHLT\n"
+        with open("main.asm", "w") as f:
+            f.write(asm_lines)
 
     except InvalidIdentifierError as e:
         print("Invalid identifier error at {}:{} : ".format(*e.get_line_pos()) + e.get_info(), file=stderr)
