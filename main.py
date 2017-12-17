@@ -39,24 +39,12 @@ if __name__ == '__main__':
     program = """
         program
         var
-            a123a, b123b : integer;
-            c123c, d123d : real;
-            e123e, f123f : boolean;
+            a123a, b123b, c123c : integer;
         begin
-            let a123a = 123;
-            c123c = 123;
-            f123f = false;
-            switch 12 + 3 {
-                case 1:
-                    d123d = 50
-                case 15:
-                    e123e = true
-            };
-            for b123b = 1 to 30 do
-                a123a = 1 * 2;
-            do while a123a == 123;
-                a123a = 124
-            loop
+            a123a = 1;
+            c123c = 2;
+            c123c = a123a + a123a + c123c;
+            b123b = a123a + c123c;
         end.
     """
     try:

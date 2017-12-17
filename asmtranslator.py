@@ -302,6 +302,7 @@ class AsmTranslator:
     def to_asm(self, token_list):
         poliz = self.to_poliz(token_list)
         asm_cmds = []
+        current_stack = []
 
         def append_bin_op_to(cmd_list, op):
             op_cmd = self.asm_syntax.add_mem(self.asm_syntax.get_tmp_mem())
@@ -320,24 +321,31 @@ class AsmTranslator:
                 self.asm_syntax.push_mem(self.asm_syntax.get_tmp_mem())
             ]:
                 cmd_list.append(i)
+            current_stack.pop()
+            current_stack.pop()
+            current_stack.append("tmp")
 
         for i, cmd in enumerate(poliz):
             if cmd in self.constants:
+                current_stack.append(cmd)
                 asm_cmds.append(self.asm_syntax.push_constant(cmd))
             elif cmd in self.identifiers:
+                current_stack.append(cmd)
                 asm_cmds.append(self.asm_syntax.push_mem(self.asm_syntax.get_mem_for_id(cmd)))
             elif type(cmd) is str and cmd in "+-*/":
                 append_bin_op_to(asm_cmds, cmd)
             elif cmd == "==":
                 append_bin_op_to(asm_cmds, "-")
             elif cmd == "=":
-                identifier = asm_cmds[-2]
+                identifier = current_stack[-2]
                 asm_cmds += [
                     self.asm_syntax.pop_mem(self.asm_syntax.get_tmp_mem()),
                     self.asm_syntax.pop(),
                     self.asm_syntax.rd_mem(self.asm_syntax.get_tmp_mem()),
                     self.asm_syntax.wr_mem(self.asm_syntax.get_mem_for_id(identifier))
                 ]
+                current_stack.pop()
+                current_stack.pop()
             elif type(cmd) is FutureLabel or type(cmd) is AsmLabel:
                 asm_cmds.append(str(cmd) + ":")
             elif type(cmd) is JmpToken or type(cmd) is JnzToken or type(cmd) is CmpToken:
@@ -346,6 +354,7 @@ class AsmTranslator:
                 constant = 0
                 if cmd == "true":
                     constant = 1
+                current_stack.append(constant)
                 asm_cmds.append(self.asm_syntax.push_constant(constant))
             elif cmd == "let":
                 continue
