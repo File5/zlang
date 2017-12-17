@@ -310,7 +310,7 @@ class AsmTranslator:
                 op_cmd = self.asm_syntax.sub_mem(self.asm_syntax.get_tmp_mem())
             elif op == "*":
                 op_cmd = self.asm_syntax.mul_mem(self.asm_syntax.get_tmp_mem())
-            elif op_cmd == "/":
+            elif op == "/":
                 op_cmd = self.asm_syntax.div_mem(self.asm_syntax.get_tmp_mem())
 
             for i in [
