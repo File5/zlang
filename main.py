@@ -7,6 +7,9 @@ from syntaxanalyzer import SyntaxAnalyzer, GrammarNode
 from lexicalanalyzer import LexicalParser, Token
 from semanticanalyzer import SemanticAnalyzer
 from asmtranslator import AsmTranslator
+import sys
+
+filename = "main.zl"
 
 
 class Compiler:
@@ -36,29 +39,13 @@ if __name__ == '__main__':
         "true",
         "false"
     ], r'[A-Za-z][0-9]*[A-Za-z]')
-    program = """
-        program
-        var
-            a123a, b123b : integer;
-            c123c, d123d : real;
-            e123e, f123f : boolean;
-        begin
-            a123a = 0;
-            b123b = 1;
-            switch a123a + 10 {
-                case 10:
-                    {
-                        a123a = 10;
-                        b123b = 10
-                    }
-                case 11:
-                    {
-                        a123a = 11;
-                        b123b = 11
-                    }
-            }
-        end.
-    """
+
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
+
+    with open(filename) as f:
+        program = f.read()
+
     try:
         token_list = lexicalAnalyzer.parse(program)
 
