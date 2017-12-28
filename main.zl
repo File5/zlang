@@ -1,21 +1,18 @@
-program
-var
-    a123a, b123b : integer;
-    c123c, d123d : real;
-    e123e, f123f : boolean;
-begin
-    a123a = 0;
-    b123b = 1;
-    switch a123a + 10 {
-        case 10:
-            {
-                a123a = 10;
-                b123b = 10
-            }
-        case 11:
-            {
-                a123a = 11;
-                b123b = 11
-            }
-    }
-end.
+{
+  dim a1, a2 integer;
+  a1 = 5;
+  dim b1 boolean;
+  dim c1 real;
+  if [a1 != 5]
+    a2 = 6
+  else
+    a2 = 12
+  endif;
+  for a2 = 1 to 5 do
+    a1 = 10;
+  while a1 != 5 do
+    a1 = 5;
+  a2 = 2 + 2 * 2;
+  readln c1;
+  writeln(a2);
+}

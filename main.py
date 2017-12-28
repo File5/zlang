@@ -19,26 +19,23 @@ class Compiler:
 
 if __name__ == '__main__':
     lexicalAnalyzer = LexicalParser([
-        "program",
-        "var",
-        "begin",
-        "end",
+        "dim",
         "integer",
         "real",
         "boolean",
         "let",
-        "switch",
-        "case",
+        "if",
+        "else",
+        "endif",
         "for",
         "to",
         "do",
         "while",
-        "loop",
         "readln",
         "writeln",
         "true",
         "false"
-    ], r'[A-Za-z][0-9]*[A-Za-z]')
+    ], r'[A-Za-z]+[0-9]')
 
     if len(sys.argv) > 1:
         filename = sys.argv[1]

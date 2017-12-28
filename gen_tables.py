@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # список терминальных символов
-TERMINALS = 'program var begin end . : ; ID , integer real boolean { } = let switch case for to do while loop readln writeln + - * / ( ) CONSTANT < <= > >= == != \\'.split(' ')
+TERMINALS = 'dim ; ID , integer real boolean { } = let if [ ] else endif for to do while readln writeln + - * / ( ) CONSTANT < <= > >= == != \\'.split(' ')
 
 # начальный символ грамматики
 START_NON_TERMINAL = 'PROGRAM'
@@ -11,22 +11,21 @@ START_NON_TERMINAL = 'PROGRAM'
 # пробел - разделитель символов грамматики
 # левая и правая части разделяются символом '::='
 GRAMMAR = """
-PROGRAM ::= program var TYPE_DEFINITION_N begin OPERATOR_N end .
-TYPE_DEFINITION_N ::= TYPE_DEFINITION ; | TYPE_DEFINITION ; TYPE_DEFINITION_N
-TYPE_DEFINITION ::= ID_N : TYPE
+PROGRAM ::= { PROGRAM_CONTENT_N }
+PROGRAM_CONTENT_N ::= PROGRAM_CONTENT ; | PROGRAM_CONTENT ; PROGRAM_CONTENT_N
+PROGRAM_CONTENT ::= TYPE_DEFINITION | OPERATOR
+TYPE_DEFINITION ::= dim ID_N integer | dim ID_N real | dim ID_N boolean
 ID_N ::= ID | ID , ID_N
-TYPE ::= integer | real | boolean
 OPERATOR_N ::= OPERATOR | OPERATOR ; OPERATOR_N
-OPERATOR ::= COMPLEX_OPERATOR | ASSIGNMENT_OPERATOR | SWITCH_OPERATOR | FOR_OPERATOR | WHILE_OPERATOR | INPUT_OPERATOR | OUTPUT_OPERATOR
+OPERATOR ::= COMPLEX_OPERATOR | ASSIGNMENT_OPERATOR | IF_OPERATOR | FOR_OPERATOR | WHILE_OPERATOR | INPUT_OPERATOR | OUTPUT_OPERATOR
 COMPLEX_OPERATOR ::= { OPERATOR_N }
 ASSIGNMENT_OPERATOR ::= ID = EXPRESSION | let ID = EXPRESSION
-SWITCH_OPERATOR ::= switch EXPRESSION { CASE_N }
-CASE_N ::= case CASE_CONTENT | CASE_N case CASE_CONTENT
-CASE_CONTENT ::= CONSTANT : OPERATOR
+IF_OPERATOR ::= if [ EXPRESSION ] OPERATOR endif | if [ EXPRESSION ] OPERATOR else OPERATOR endif
 FOR_OPERATOR ::= for ASSIGNMENT_OPERATOR to EXPRESSION do OPERATOR
-WHILE_OPERATOR ::= do while EXPRESSION ; OPERATOR loop
+WHILE_OPERATOR ::= while EXPRESSION do OPERATOR
 INPUT_OPERATOR ::= readln ID_N
-OUTPUT_OPERATOR ::= writeln EXPRESSION | OUTPUT_OPERATOR \ EXPRESSION
+OUTPUT_OPERATOR ::= writeln ( EXPRESSION_N )
+EXPRESSION_N ::= EXPRESSION | EXPRESSION \ EXPRESSION_N
 EXPRESSION ::= A < A | A <= A | A > A | A >= A | A == A | A != A | A
 A ::= A + T | A - T | T
 T ::= T * P | T / P | P
