@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from sys import stderr
-from exceptions import InvalidIdentifierError, UndefinedIdentifierError
+from exceptions import InvalidIdentifierError, UndefinedIdentifierError, ParseError
 from syntaxanalyzer import SyntaxAnalyzer, GrammarNode
 from lexicalanalyzer import LexicalParser, Token
 from semanticanalyzer import SemanticAnalyzer
@@ -158,5 +158,8 @@ if __name__ == '__main__':
         with open("main.asm", "w") as f:
             f.write(asm_lines)
 
+    except ParseError as e:
+        print("Syntax error at {}:{} : ".format(*e.get_line_pos()))
+
     except InvalidIdentifierError as e:
-        print("Invalid identifier error at {}:{} : ".format(*e.get_line_pos()) + e.get_info(), file=stderr)
+        print("Invalid identifier error at {}:{} : ".format(*e.get_line_pos()) + e.get_info())
