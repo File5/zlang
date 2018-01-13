@@ -361,7 +361,8 @@ class AsmTranslator:
             elif type(cmd) is str:
                 asm_cmds.append(cmd)
             else:
-                print("Command not printed: ", cmd, repr(cmd))
+                pass
+                # print("Command not printed: ", cmd, repr(cmd))
 
         return asm_cmds
 
@@ -382,7 +383,7 @@ class AsmTranslator:
                 op_stack.pop()
 
         while len(token_list) > 0:
-            print("STEP", result_list, op_stack, token_list[0].value, sep='\n')
+            # print("STEP", result_list, op_stack, token_list[0].value, sep='\n')
             current_token = token_list[0]
             current_value = current_token.value
 
@@ -514,5 +515,5 @@ class AsmTranslator:
                 result_list.append(self.asm_syntax.pop())
                 result_list.append(JzToken(w.get_end_while_label()))
 
-        print(result_list, op_stack, list(map(lambda x: x.value, token_list)), sep='\n')
+        # print(result_list, op_stack, list(map(lambda x: x.value, token_list)), sep='\n')
         return result_list
