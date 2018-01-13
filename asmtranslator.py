@@ -300,6 +300,7 @@ class AsmTranslator:
         self.asm_syntax = AsmSyntax()
 
     def to_asm(self, token_list):
+        token_list = self.filter_non_cmds(token_list)
         poliz = self.to_poliz(token_list)
         asm_cmds = []
         current_stack = []
@@ -365,6 +366,20 @@ class AsmTranslator:
                 # print("Command not printed: ", cmd, repr(cmd))
 
         return asm_cmds
+
+    def filter_non_cmds(self, token_list):
+        res = token_list[:]
+
+        values = list(map(lambda x: x.value, token_list))
+
+        while "dim" in values:
+            dim_index = values.index("dim")
+            end_dim_index = values.index(";", dim_index)
+
+            values = values[0:dim_index] + values[end_dim_index + 1:]
+            res = res[0:dim_index] + res[end_dim_index + 1:]
+
+        return res
 
     def to_poliz(self, token_list):
         result_list = []
@@ -496,15 +511,22 @@ class AsmTranslator:
                 result_list.append(self.asm_syntax.inc_mem(f.get_mem()))
                 result_list.append(JmpToken(f.get_for_label()))
                 result_list.append(end_for_label)
-            if op_stack[-2:] == ["do", "while"]:
+            if current_value == ";" and len(op_stack) > 0 and type(op_stack[-1]) is WhileToken:
+                # finish while
+                w = op_stack.pop()
+                end_while_label = AsmLabel(self.asm_syntax.get_label_for("end_while"))
+                w.get_end_while_label().set_label(end_while_label)
+                result_list.append(JmpToken(w.get_while_label()))
+                result_list.append(end_while_label)
+            if len(op_stack) > 0 and op_stack[-1] == "while":
                 # before condition
                 op_stack.pop()  # while
-                op_stack.pop()  # do
                 while_label = AsmLabel(self.asm_syntax.get_label_for("while"))
                 result_list.append(while_label)
                 op_stack.append(WhileToken(while_label))
 
-            if len(op_stack) > 0 and type(op_stack[-1]) is WhileToken and current_value == ";":
+            if len(op_stack) > 0 and type(op_stack[-1]) is WhileToken and current_value == "do":
+                token_list.pop(0)
                 # after condition
                 # find nearest "<while>"
                 w = None

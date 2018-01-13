@@ -139,14 +139,7 @@ if __name__ == '__main__':
         else:
             print("Semantic analyze finished: OK")
 
-        begin = 0
-        end = 0
-        for i, token in enumerate(token_list):
-            if token.value == "begin":
-                begin = i
-            elif token.value == "end":
-                end = i
-        program_token_list = token_list[begin + 1 : end]
+        program_token_list = token_list[1:-1]
         asmt = AsmTranslator(lexicalAnalyzer.constants, lexicalAnalyzer.identifiers)
         asm_lines = "\n".join(asmt.to_asm(program_token_list))
 
