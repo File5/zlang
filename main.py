@@ -84,7 +84,7 @@ if __name__ == '__main__':
 
         def IS_IDENTIFIER_DEF_NODE(node):
             try:
-                return type(node) is GrammarNode and node.content[-2].value == ':' and node.content[-1].content[0].value in TYPES
+                return type(node) is GrammarNode and node.content[0].value == 'dim'
             except (NameError, IndexError, AttributeError):
                 return False
 
@@ -95,7 +95,7 @@ if __name__ == '__main__':
                         identifiers_defined = []
                         # search Identifiers
 
-                        node_queue = [node.content[0]]
+                        node_queue = [node.content[1]]
                         while len(node_queue) > 0:
                             current_node = node_queue.pop(0)
 
