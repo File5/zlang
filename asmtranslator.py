@@ -174,6 +174,26 @@ class SwitchToken:
         return self.end_label
 
 
+class IfToken:
+
+    def __init__(self, insert_pos):
+        self.insert_pos = insert_pos
+        self.else_label = FutureLabel()
+        self.end_label = FutureLabel()
+
+    def __repr__(self):
+        return "<switch insert_pos={} end={}>".format(self.insert_pos, self.end_label)
+
+    def get_insert_pos(self):
+        return self.insert_pos
+
+    def get_end_label(self):
+        return self.end_label
+
+    def get_else_label(self):
+        return self.else_label
+
+
 class ForToken:
 
     def __init__(self, mem, const1, const2, for_label):
@@ -251,8 +271,11 @@ class AsmTranslator:
         self.input_priority = {
             "=" : 100,
             "(" : 100,
-            "switch" : 100,
-            "case" : 1,
+            "if" : 100,
+            "[" : 1,
+            "]" : 1,
+            "else": 1,
+            "endif": 1,
             "for" : 100,
             "while" : 100,
             "readln" : 100,
@@ -279,8 +302,10 @@ class AsmTranslator:
             "=" : 0,
             "(" : 0,
             "{" : 0,
-            "switch" : 0,
-            "case" : 0,
+            "if" : 0,
+            "[" : 0,
+            "]" : 0,
+            "else": 0,
             "for" : 0,
             "while" : 0,
             "readln": 0,
@@ -407,7 +432,7 @@ class AsmTranslator:
                 result_list.append(current_value)
                 token_list.pop(0)
 
-            elif current_value in (")", "loop", ";", "}", "end", ":", "case", "for"):
+            elif current_value in (")", "loop", ";", "}", "end", ":", "else", "endif", "for"):
                 if current_value == ")":
                     pop_until("(")
                     token_list.pop(0)
@@ -426,20 +451,44 @@ class AsmTranslator:
                     if len(op_stack) > 0 and type(op_stack[-1]) is not WhileToken:
                         result_list.append(op_stack.pop())
                     token_list.pop(0)
-                elif current_value == "case":
-                    token_list.pop(0) # case
-                    # find nearest "<switch>"
+                elif current_value == "else":
+                    token_list.pop(0) # else
+                    # find nearest "<if>"
                     s = None
                     for t in reversed(op_stack):
-                        if type(t) is SwitchToken:
+                        if type(t) is IfToken:
                             s = t
                             break
                     pop_until(s, extra_pop=False)
                     result_list.append(JmpToken(s.get_end_label()))
-                    case_label = self.asm_syntax.get_label_for("case")
-                    constant = token_list.pop(0).value
-                    result_list.append(AsmLabel(case_label))
-                    result_list.insert(s.get_insert_pos(), CmpToken(constant, case_label))
+                    else_label = self.asm_syntax.get_label_for("else")
+                    s.get_else_label().set_label(else_label)
+                    # constant = listLex.pop(0).value
+                    result_list.append(AsmLabel(else_label))
+                    # result_list.insert(s.get_insert_pos(), CmpToken(constant, else_label))
+
+                elif current_value == "endif":
+                    pop_until_any_of([], types=[IfToken], extra_pop=False)
+                    # find nearest "<if>"
+                    s = None
+                    for t in reversed(op_stack):
+                        if type(t) is IfToken:
+                            s = t
+                            break
+                    if s is not None:
+                        pop_until_any_of(s, "{", extra_pop=False)
+
+                        if len(op_stack) > 0 and op_stack[-1] == "{":
+                            op_stack.pop()
+                        else:
+                            # finish "<if>"
+                            end_label = AsmLabel(self.asm_syntax.get_label_for("if_end"))
+                            result_list.append(end_label)
+                            s.get_end_label().set_label(end_label)
+                            if str(s.get_else_label()) == "undefined":
+                                s.get_else_label().set_label(end_label)
+                            op_stack.pop()
+                            token_list.pop(0)
 
                 elif current_value == "}":
                     # find nearest "<switch>"
@@ -498,11 +547,14 @@ class AsmTranslator:
                     token_list.pop(0)
                     op_stack.append(current_value)
 
-            if op_stack[-2:] == ["switch", "{"]:
-                op_stack.pop() # {
-                op_stack.pop() # switch
+            if op_stack[-3:] == ["if", "[", "]"]:
+                op_stack.pop() # ]
+                op_stack.pop() # [
+                op_stack.pop() # if
                 result_list.append(self.asm_syntax.pop())
-                op_stack.append(SwitchToken(len(result_list)))
+                if_token = IfToken(len(result_list))
+                op_stack.append(if_token)
+                result_list.append(JzToken(if_token.get_else_label()))
             if current_value == ";" and len(op_stack) > 0 and type(op_stack[-1]) is ForToken:
                 # finish for
                 f = op_stack.pop()
