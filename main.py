@@ -150,7 +150,6 @@ if __name__ == '__main__':
         asmt = AsmTranslator(lexicalAnalyzer.constants, lexicalAnalyzer.identifiers)
         asm_lines = "\n".join(asmt.to_asm(program_token_list))
 
-        print(asm_lines)
         asm_lines += "\nHLT\n"
         with open("main.asm", "w") as f:
             f.write(asm_lines)
